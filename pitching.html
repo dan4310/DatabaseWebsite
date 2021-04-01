@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en-US" dir="ltr">
+	<head>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<link rel="stylesheet" href="css/style.css">
+		<link rel="shortcut icon" type="image/ico" href="favicon.ico"/>
+		<link rel="pitching data" href="data/Pitching.JSON"/>
+		<link rel="people data" href="data/People.JSON"/>
+		<title>Daniel's Database - Batting</title>
+	</head>
+
+
+	<body>
+		<section class="titleSec">
+				<a id="title"></a>
+				<h1 class="title">Daniel's Database Project</h1>
+				<p class="preamble">Here is a simple website to view an MLB database which I got from <a href="http://www.seanlahman.com/baseball-archive/statistics/">seanlahman.com</a>. You will be able to filter an search the database via backend SQL which I will be executing with <a href="https://github.com/agershun/alasql/wiki">AlaSQL</a>. I will also implement feature to project the future performance of players. These features will be coming soon.
+				</p>
+		
+		</section>
+
+		<!------------------ Navigation Bar ------------------------->
+
+		<section class="navbar">
+			<h2 class="navHeader">
+				<a class="navLink" href="index.html">People</a>
+			</h2>
+			<h2 class="navHeader">
+				<a class="navLink" href="batting.html">Batting</a>
+			</h2>
+			<h2 class="navHeader">
+				<a class="navLink" href="fielding.html">Fielding</a>
+			</h2>
+			<h2 class="navHeader">
+				<a class="navLinkCurrent" href="pitching.html">Pitching</a>
+			</h2>
+			
+		</section>
+
+		<!------------------ Filter ------------------------->
+
+		<section class="query">
+			<form class="filter"> 
+				<label for="optgroup" class="filterLbl"> Filter By: </label>
+				<select class="input" name="optgroup" id="orderByGroup">
+					<optgroup label="Order By">
+						<option value="W">Wins</option>
+						<option value="L">Losses</option>
+						<option value="ER/IPouts">Earned Run AVG %</option>
+						<option value="teamID">Team</option>
+						<option value="G">Games</option>
+						<option value="GS">Games Started</option>
+						<option value="CG">Complete Games</option>
+						<option value="SHO">Shutouts</option>
+						<option value="SV">Saves</option>
+						<option value="IPouts">Innings Pitched</option>
+						<option value="H">Hits Allowed</option>
+						<option value="R">Runs Allowed</option>
+						<option value="ER">Earned Runs</option>
+						<option value="HR">Home Runs Allwoed</option>
+						<option value="HBP">Oppents Hit by Pitch</option>
+						<option value="SO">Base on Balls</option>
+						<option value="SO">Strike Outs</option>
+						<option value="BAOpp">Oppenets</option>
+						<option value="yearID">Year</option>
+					</optgroup>
+				</select>
+
+				<select class="input" name="optgroup" id="orderDir">
+					<optgroup label="Direction">
+						<option value="DESC">Desc</option>
+						<option value="ASC">Asc</option>
+					</optgroup>
+				</select>
+
+				<label for="name1Query" class="filterLbl"> Name: </label>
+				<input class="inputText" type="text" id="name1Text" placeholder="Enter a name">
+
+				<label for="yearQuery" class="filterLbl"> Year: </label>
+				<input class="inputText" type="text" id="yearText" placeholder="Enter a year">
+
+				<label for="teamQuery" class="filterLbl"> Team: </label>
+				<input class="inputText" type="text" id="teamText" placeholder="Enter a team">
+			</form> 
+			<button class="submitQuery" onclick="queryHandler(0)"> Filter </button>
+		</section>
+
+		<!------------------ Table ------------------------->
+		
+		<section class="tableSec">
+			<table class="tableRes">
+				<tbody id="tbody"></tbody>
+			</table>
+
+			<div class="numCells" id="numLoaded">
+
+			</div>
+
+			<a href="#title" class="toTop"> - Back to Top - </a>
+			<button class="submitQuery" onclick="loadMore()"> Load More </button>
+		</section>
+
+		<!------------------ Import AlaSQL ------------------------->
+
+		<script type="text/javascript" src="https://cdn.jsdelivr.net/alasql/0.1/alasql.min.js"></script>
+
+		<!------------------ Import JQuery ------------------------->
+
+		<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.6.2/jquery.min.js"> </script>
+
+		<!------------------ Script ------------------------->
+		<script type="text/javascript">
+
+			var pitchingURL = "data/Pitching.json";
+			var peopleURL = "data/People.json";
+
+			var pitchingJSON = (function () {
+			    var pitchingJSON = null;
+			    $.ajax({
+			        'async': false,
+			        'global': false,
+			        'url': pitchingURL,
+			        'dataType': "json",
+			        'success': function (data) {
+			            pitchingJSON = data;
+			        }
+			    });
+		    	return pitchingJSON;
+			})();
+
+			var peopleJSON = (function () {
+			    var peopleJSON = null;
+			    $.ajax({
+			        'async': false,
+			        'global': false,
+			        'url': peopleURL,
+			        'dataType': "json",
+			        'success': function (data) {
+			            peopleJSON = data;
+			        }
+			    });
+		    	return peopleJSON;
+			})();
+
+
+
+			/* ---------- Print Initial Table ------------------------------ */
+
+			alasql('CREATE TABLE pitching (playerID number, teamID string, W number, L number, IPouts number, G number, GS number, CG number, SHO number, SV number, H number, R number, ER number, HR number, HBP number, BB number, SO number, BAOpp number, yearID number)');
+			alasql('INSERT INTO pitching SELECT playerID, teamID, W, L, IPouts, G, GS, CG, SHO, SV, H, R, ER, HR, HBP, BB, SO, BAOpp, yearID FROM ? WHERE (IPouts != 0)', [pitchingJSON]);
+			alasql('CREATE TABLE people (playerID string, name string, birthYear number)');
+			alasql('INSERT INTO people SELECT playerID, nameFirst+" "+nameLast AS name, birthYear FROM ?', [peopleJSON]);
+
+			var res;
+			queryHandler(0);
+			var numCells = 100;
+
+			/* ---------- Functions ------------------------------ */
+
+			function showResult(obj) {
+				res = obj;
+				var tbody = document.getElementById('tbody');
+				var headings = ["Name", "Team", "W", "L", "ERA", "G", "GS", "CG", "SHO", "SV", "IP", "H", "R", "ER", "HR", "HBP", "BB", "SO", "WHIP", "AVG", "Year"];
+
+				h = "<tr>";
+	
+				for (var i = 0; i < headings.length; i++) {
+					h += "<th>" + headings[i] + "</th>";
+				}
+
+				h += "</tr>";
+
+				tbody.innerHTML += h;
+
+				var count = 0;
+				for (var i = 0; i < 100; i++) {
+				    var tr = "<tr>";
+
+				    	try {
+				    		var era = (9*obj[i].ER)/(obj[i].IPouts/3);
+				    		var ip = obj[i].IPouts/3;
+				    		var whip = (obj[i].W*obj[i].H)/(obj[i].IPouts/3);
+
+						    tr += "<td>" + (i+1) + " - " + obj[i].name + "</td>" + "<td>" + obj[i].teamID + "</td>" + "<td>" + obj[i].W + "</td>" + "<td>" + obj[i].L + "</td>" + "<td>" + era.toFixed(2) + "</td>" + "<td>" + obj[i].G + "</td>" + "<td>" + obj[i].GS + "</td>" + "<td>" + obj[i].CG + "</td>" + "<td>" + obj[i].SHO + "</td>"  + "<td>" + obj[i].SV + "</td>" + "<td>" + ip.toFixed(1) + "</td>" + "<td>" + obj[i].H + "</td>" + "<td>" + obj[i].R + "</td>" + "<td>" + obj[i].ER + "</td>" + "<td>" + obj[i].HR + "</td>" + "<td>" + obj[i].HBP + "<td>" + obj[i].BB + "</td>" + "<td>" + obj[i].SO + "</td>" + "<td>" + whip.toFixed(2) + "</td>" + "<td>" + obj[i].BAOpp + "</td>" + "<td>" +  obj[i].yearID + "</td></xtr>";
+						    tbody.innerHTML += tr;
+						    count++;
+						} catch (err) {
+							// do nothing
+						}
+				    
+				}
+
+				numCells = count;
+
+				var numLoaded = document.getElementById('numLoaded');
+				numLoaded.innerHTML = "";
+				var s = "<p>"+(numCells)+" - "+Object.keys(obj).length+"</p>";
+				numLoaded.innerHTML += s;
+			}
+
+			function loadMore() {
+				if (numCells === Object.keys(res).length) {
+					return;
+				}
+
+				var tbody = document.getElementById('tbody');				
+
+				var count = 0;
+				for (var i = numCells; i < 100+numCells; i++) {
+				    var tr = "<tr>";
+
+				    if (i === Object.keys(res).length) {
+				    	break;
+				    }
+				    count++;
+
+
+				    	try {
+				    		var era = (9*res[i].ER)/(res[i].IPouts/3);
+				    		var ip = res[i].IPouts/3;
+				    		var whip = (res[i].W*res[i].H)/(res[i].IPouts/3);
+						    tr += "<td>" + (i+1) + " - " + res[i].name + "</td>" + "<td>" + res[i].teamID + "</td>" + "<td>" + res[i].W + "</td>" + "<td>" + res[i].L + "</td>" + "<td>" + era.toFixed(2) + "</td>" + "<td>" + res[i].G + "</td>" + "<td>" + res[i].GS + "</td>" + "<td>" + res[i].CG + "</td>" + "<td>" + res[i].SHO + "</td>"  + "<td>" + res[i].SV + "</td>" + "<td>" + ip.toFixed(1) + "</td>" + "<td>" + res[i].H + "</td>" + "<td>" + res[i].R + "</td>" + "<td>" + res[i].ER + "</td>" + "<td>" + res[i].HR + "</td>" + "<td>" + res[i].HBP + "<td>" + res[i].BB + "</td>" + "<td>" + res[i].SO + "</td>" + "<td>" + whip.toFixed(2) + "</td>" + "<td>" + res[i].BAOpp + "</td>" + "<td>" +  res[i].yearID + "</td></xtr>";
+						    tbody.innerHTML += tr;
+						} catch (err) {
+							// do nothing
+						}
+				    
+				}
+
+				numCells += count;
+
+				var numLoaded = document.getElementById('numLoaded');
+				numLoaded.innerHTML = "<p></p>";
+				var s = "<p>"+(numCells)+" - "+Object.keys(res).length+"</p>";
+				numLoaded.innerHTML += s;
+
+			}
+
+			function queryHandler(number) {
+				var year = document.getElementById('yearText').value;
+				var name1 = document.getElementById('name1Text').value;
+				var team = document.getElementById('teamText').value;
+
+				var filter = document.getElementById('orderDir');
+				var orderDir = filter.options[filter.selectedIndex].value;
+
+				filter = document.getElementById('orderByGroup');
+				var orderByGroup = filter.options[filter.selectedIndex].value;
+
+
+				var tbody = document.getElementById('tbody');
+				var new_tbody = document.createElement('tbody');
+				new_tbody.id = "tbody";
+				tbody.parentNode.replaceChild(new_tbody, tbody);
+
+				var res;
+				if (year === "") {
+					year = "IS NOT NULL"
+				} else {
+					year = '= '+year ;
+				}
+
+				if (name1 === "") {
+					name1 = "IS NOT NULL"
+				} else {
+					name1 = 'LIKE "%'+ name1+ '%"';
+				}
+
+				if (team === "") {
+					team = "IS NOT NULL"
+				} else {
+					team = 'LIKE "%'+ team+ '%"';
+				}
+
+				res = alasql('SELECT * FROM pitching AS a JOIN people AS b ON a.playerID = b.playerID WHERE (name '+name1+' AND yearID '+year+' AND teamID '+team+') ORDER BY '+orderByGroup+' '+orderDir);
+
+				showResult(res);
+			}
+
+
+		</script>
+
+	</body>
+</html>

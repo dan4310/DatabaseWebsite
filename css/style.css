@@ -1,0 +1,220 @@
+/*
+Black: 30,30,30
+Grey: 94,94,94
+*/
+
+.navbar {
+	background: rgb(94,94,94);
+	font-size: 20px;
+	text-align: center;
+	padding-bottom: 2px;
+	margin-left: -9px;
+	margin-right: -9px;
+	margin-top: -9px;
+}
+.navHeader {
+	color: white;
+	display: inline;
+	padding: 7%;
+}
+@media screen and (max-width:1166px) {
+        .navHeader{ padding:5%;}
+}
+@media screen and (max-width:1024px) {
+        .navHeader{ padding:3%;}
+}
+@media screen and (max-width:767px) {
+        .navHeader{ padding:2%;}
+}
+@media screen and (max-width:579px) {
+        .navHeader{ padding:0%;}
+}
+
+a {
+	text-decoration: none;
+	color: inherit;
+}
+a:hover {
+     color: white; 
+     text-decoration:none; 
+     cursor:pointer;  
+}
+.navLink {
+	background: rgb(130,130,130);
+	color: rgb(94,94,94);
+	display: inline;
+	border-radius: 5px;
+	padding: 1%;
+	padding-bottom: 10px;
+
+}
+.navLinkCurrent {
+	background: rgb(30,30,30);
+	color: white;
+	display: inline;
+	border-radius: 5px;
+	padding: 1%;
+	padding-bottom: 10px;
+}
+
+.titleSec {
+	color: white;
+	background: rgb(94,94,94);
+	padding: 10px;
+	margin-left: -9px;
+	margin-right: -9px;
+	margin-top: -9px;
+}
+.title {
+	text-align: center;
+	font-size: 40px;
+	margin: 10px;
+}
+.preamble {
+	color: rgb(30,30,30);
+}
+body {
+	background: rgb(30,30,30);
+}
+.query {
+	text-align: center;
+}
+
+
+select {
+	background: rgb(130,130,130);
+	border-color: white;
+  	border-radius: 4px;
+  	display: inline-block;
+  	font: inherit;
+  	padding: 2px;
+  	-webkit-appearance: none;
+	-moz-appearance: none;
+}
+
+select.input {	
+	background: rgb(130,130,130);
+	border-color: white;
+  	border-radius: 4px;
+  	display: inline-block;
+  	font: inherit;
+  	padding: 2px;
+}
+.inputText {	
+	background: rgb(130,130,130);
+	border-color: white;
+  	border-radius: 4px;
+  	display: inline-block;
+  	font: inherit;
+  	padding: 2px;
+  	width: 10%;
+}
+.inputText::placeholder {
+	color: rgb(94,94,94);
+}
+.inputText:focus {
+	border-color: white;
+	outline: 0;
+}
+
+select.input {
+  background-image:  url('downArrow.png');
+  background-position: 95%, 50% 0;
+  background-size:  0.7em 0.7em;
+  background-repeat: no-repeat;
+}
+
+select.input:focus {
+  border-color: white;
+  outline: 0;
+}
+
+.input::placeholder {
+	color: rgb(94,94,94);
+}
+
+.container {
+	position: relative;
+	text-align: center;
+}
+#chart-fitler, #chart-button {
+	display: inline-block;
+	margin: 4 auto;
+}
+
+.submitQuery {
+	background: white;
+	border-color: white;
+	color: rgb(30,30,30);
+	padding: 4px;
+	border-radius: 4px;
+	margin-top: 10px;
+	-webkit-appearance: none;
+	-moz-appearance: none;
+}
+.submitQuery:focus {
+	border-color: white;
+	outline: 0;
+}
+.submitQuery:hover {
+	background: rgba(130,130,130,0.8);
+	border-color: rgba(94,94,94,0.8);
+	color: white;
+}
+.submitQuery:active {
+	background: rgb(30,30,30);
+	border-color: rgb(30,30,30);
+	color: white;
+}
+
+.filterLbl {
+	background: rgb(94,94,94);
+	color: white;
+	padding: 4px;
+	border-radius: 4px;
+	margin-top: 20px;
+	text-align: center;
+	display: inline-flex;
+}
+
+
+.tableRes {
+	text-align: center;
+}
+.tableSec {
+	margin-top: 20px;
+	margin-bottom: 50px;
+	text-align: center;
+}
+table {
+	background: rgb(94,94,94);
+	padding: 5px;
+}
+table, th, td {
+  margin: 0 auto;
+}
+th, td {
+  border: 1px solid black;
+  padding: 5px;
+  background: white;
+}
+
+.toTop {
+	color: rgb(130,130,130);
+	display: block;
+}
+.toTop:hover {
+	color: white;
+}
+.toTop:active {
+	color: rgb(30,30,30);
+}
+
+.numCells {
+	text-align: center;
+	color: white;
+}
+
+
+
+

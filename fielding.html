@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en-US" dir="ltr">
+	<head>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<link rel="stylesheet" href="css/style.css">
+		<link rel="shortcut icon" type="image/ico" href="favicon.ico"/>
+		<link rel="fielding data" href="data/Fielding.JSON"/>
+		<link rel="people data" href="data/People.JSON"/>
+		<title>Daniel's Database - Batting</title>
+	</head>
+
+
+	<body>
+		<section class="titleSec">
+				<a id="title"></a>
+				<h1 class="title">Daniel's Database Project</h1>
+				<p class="preamble">Here is a simple website to view an MLB database which I got from <a href="http://www.seanlahman.com/baseball-archive/statistics/">seanlahman.com</a>. You will be able to filter an search the database via backend SQL which I will be executing with <a href="https://github.com/agershun/alasql/wiki">AlaSQL</a>. I will also implement feature to project the future performance of players. These features will be coming soon.
+				</p>
+		
+		</section>
+
+		<!------------------ Navigation Bar ------------------------->
+
+		<section class="navbar">
+			<h2 class="navHeader">
+				<a class="navLink" href="index.html">People</a>
+			</h2>
+			<h2 class="navHeader">
+				<a class="navLink" href="batting.html">Batting</a>
+			</h2>
+			<h2 class="navHeader">
+				<a class="navLinkCurrent" href="fielding.html">Fielding</a>
+			</h2>
+			<h2 class="navHeader">
+				<a class="navLink" href="pitching.html">Pitching</a>
+			</h2>
+			
+		</section>
+
+		<!------------------ Chart Filter ------------------------->
+
+		<section class="query">
+			<div class='container'>
+				<div id='chart-filter'>
+					<form class="filter"> 
+						<label for="optgroup" class="filterLbl"> Search: </label>
+						<select class="input" name="optgroup" id="yVal">
+							<optgroup label="Order By">
+								<option value="G">Games Played</option>
+								<option value="GS">Games Started</option>
+								<option value="PO">Putouts</option>
+								<option value="A">Assists</option>
+								<option value="DP">Double Plays</option>
+								<option value="E">Errors</option>
+								<option value="PB">Passed Balls</option>
+								<option value="CS">Opponent Caught Stealing</option>
+							</optgroup>
+						</select>
+
+				
+						<label for="nameQuery" class="filterLbl"> Name: </label>
+						<input class="inputText" type="text" id="nameText" placeholder="Enter a name">
+					</form> 
+				</div>
+				<div id='chart-button'>
+					<button class="submitQuery" onclick="drawChart(0)"> Filter </button>
+				</div>
+			</div>
+		</section>
+
+		<!------------------ Chart ------------------------->
+		
+		<section class="tableSec">
+			<table class="tableRes">
+				<tr>
+					<td id="chart-div"></td>
+				</tr>
+			</table>
+		</section>
+
+		<!------------------ Filter ------------------------->
+
+		<section class="query">
+			<form class="filter"> 
+				<label for="optgroup" class="filterLbl"> Filter By: </label>
+				<select class="input" name="optgroup" id="orderByGroup">
+					<optgroup label="Order By">
+						<option value="G">Games Played</option>
+						<option value="GS">Games Started</option>
+						<option value="teamID">Team</option>
+						<option value="PO">Putouts</option>
+						<option value="A">Assists</option>
+						<option value="DP">Double Plays</option>
+						<option value="E">Errors</option>
+						<option value="PB">Passed Balls</option>
+						<option value="CS">Opponent Caught Stealing</option>
+						<option value="yearID">Year</option>
+					</optgroup>
+				</select>
+
+				<select class="input" name="optgroup" id="orderDir">
+					<optgroup label="Direction">
+						<option value="DESC">Desc</option>
+						<option value="ASC">Asc</option>
+					</optgroup>
+				</select>
+
+				<label for="name1Query" class="filterLbl"> Name: </label>
+				<input class="inputText" type="text" id="name1Text" placeholder="Enter a name">
+
+				<label for="yearQuery" class="filterLbl"> Year: </label>
+				<input class="inputText" type="text" id="yearText" placeholder="Enter a year">
+
+				<label for="teamQuery" class="filterLbl"> Team: </label>
+				<input class="inputText" type="text" id="teamText" placeholder="Enter a team">
+
+				<select class="input" name="optgroup" id="position">
+					<optgroup label="Position">
+						<option value="POS">All Positions</option>
+						<option value="C">Catcher</option>
+						<option value="P">Pitcher</option>
+						<option value="1B">First</option>
+						<option value="2B">Second</option>
+						<option value="SS">ShortStop</option>
+						<option value="3B">Third</option>
+						<option value="OF">Outfield</option>
+					</optgroup>
+				</select>
+
+			</form> 
+			<button class="submitQuery" onclick="queryHandler(0)"> Filter </button>
+		</section>
+
+		<!------------------ Table ------------------------->
+		
+		<section class="tableSec">
+			<table class="tableRes">
+				<tbody id="tbody"></tbody>
+			</table>
+
+			<div class="numCells" id="numLoaded">
+
+			</div>
+
+			<a href="#title" class="toTop"> - Back to Top - </a>
+			<button class="submitQuery" onclick="loadMore()"> Load More </button>
+		</section>
+
+		<!------------------ Import AlaSQL ------------------------->
+
+		<script type="text/javascript" src="https://cdn.jsdelivr.net/alasql/0.1/alasql.min.js"></script>
+
+		<!------------------ Import JQuery ------------------------->
+
+		<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.6.2/jquery.min.js"> </script>
+
+		<!------------------ Import Google Charts ------------------------->
+
+		<script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+
+		<!------------------ Script ------------------------->
+		<script type="text/javascript">
+
+			var fieldingURL = "data/Fielding.json";
+			var peopleURL = "data/People.json";
+			var fieldingJSON = (function () {
+			    var fieldingJSON = null;
+			    $.ajax({
+			        'async': false,
+			        'global': false,
+			        'url': fieldingURL,
+			        'dataType': "json",
+			        'success': function (data) {
+			            fieldingJSON = data;
+			        }
+			    });
+		    	return fieldingJSON;
+			})();
+
+			var peopleJSON = (function () {
+			    var peopleJSON = null;
+			    $.ajax({
+			        'async': false,
+			        'global': false,
+			        'url': peopleURL,
+			        'dataType': "json",
+			        'success': function (data) {
+			            peopleJSON = data;
+			        }
+			    });
+		    	return peopleJSON;
+			})();
+
+
+
+			/* ---------- Print Initial Table ------------------------------ */
+
+			alasql('CREATE TABLE fielding (playerID string, teamID string, POS string, G number, GS number, PO number, A number, DP number, E number, PB number, WP number, SB number, CS number, ZR number, yearID string)');
+			alasql('INSERT INTO fielding SELECT playerID, teamID, POS, G, GS, PO, A, DP, E, PB, SB, CS, yearID FROM ?', [fieldingJSON]);
+			alasql('CREATE TABLE people (playerID string, name string, birthYear number)');
+			alasql('INSERT INTO people SELECT playerID, nameFirst+" "+nameLast AS name, birthYear FROM ?', [peopleJSON]);
+
+			var res;
+			var chartRes;
+
+			google.load("visualization", "1", { packages: ["corechart"] });
+    		google.setOnLoadCallback(drawChart);
+
+			queryHandler(0);
+			var numCells = 100;
+
+			/* ---------- Functions ------------------------------ */
+
+			function showResult(obj) {
+				res = obj;
+				var tbody = document.getElementById('tbody');
+				var headings = ["Name", "POS", "Team", "G", "GS", "A", "PO", "DP", "E", "PB", "SB", "CS", "Year"];
+
+				h = "<tr>";
+	
+				for (var i = 0; i < headings.length; i++) {
+					h += "<th>" + headings[i] + "</th>";
+				}
+
+				h += "</tr>";
+
+				tbody.innerHTML += h;
+
+				var count = 0;
+				for (var i = 0; i < 100; i++) {
+				    var tr = "<tr>";
+
+				    try {
+					    tr += "<td>" + (i+1) + " - " + obj[i].name + "</td>" + "<td>" + obj[i].POS + "</td>" + "<td>" + obj[i].teamID +  "</td>" + "<td>" + obj[i].G + "</td>" + "<td>" + obj[i].GS + "</td>" + "<td>" + obj[i].A + "</td>" + "<td>" + obj[i].PO + "</td>" + "<td>" + obj[i].DP + "</td>" + "<td>" + obj[i].E + "</td>" + "<td>" + obj[i].PB +  "</td>" + "<td>" + obj[i].SB +  "</td>" + "<td>" + obj[i].CS +  "</td>" + "<td>" +  obj[i].yearID + "</td></xtr>";
+					    tbody.innerHTML += tr;
+					    count++;
+				    } catch (err) {
+				    	// do nothing
+				    }
+				}
+
+				numCells = count;
+
+				var numLoaded = document.getElementById('numLoaded');
+				numLoaded.innerHTML = "";
+				var s = "<p>"+(numCells)+" - "+Object.keys(obj).length+"</p>";
+				numLoaded.innerHTML += s;
+			}
+
+			function loadMore() {
+
+				var tbody = document.getElementById('tbody');
+
+				if (numCells === Object.keys(res).length) {
+					return;
+				}				
+
+				var count = 0;
+				for (var i = numCells; i < 100+numCells; i++) {
+				    var tr = "<tr>";
+
+				    if (i === Object.keys(res).length) {
+				    	break;
+				    }
+
+				    try {
+					    tr += "<td>" + (i+1) + " - " + res[i].name + "</td>" + "<td>" + res[i].POS + "</td>" + "<td>" + res[i].teamID +  "</td>" + "<td>" + res[i].G + "</td>" + "<td>" + res[i].GS + "</td>" + "<td>" + res[i].A + "</td>" + "<td>" + res[i].PO + "</td>" + "<td>" + res[i].DP + "</td>" + "<td>" + res[i].E + "</td>" + "<td>" + res[i].PB +  "</td>" + "<td>" + res[i].SB +  "</td>" + "<td>" + res[i].CS +  "</td>" + "<td>" +  res[i].yearID + "</td></xtr>";
+					    tbody.innerHTML += tr;
+					    count++;
+				    } catch (err) {
+				    	// do nothing
+				    }
+				    
+				}
+
+				numCells += count;
+
+				var numLoaded = document.getElementById('numLoaded');
+				numLoaded.innerHTML = "<p></p>";
+				var s = "<p>"+(numCells)+" - "+Object.keys(res).length+"</p>";
+				numLoaded.innerHTML += s;
+
+			}
+
+			function queryHandler(number) {
+				var year = document.getElementById('yearText').value;
+				var name1 = document.getElementById('name1Text').value;
+				var team = document.getElementById('teamText').value;
+
+				var filter = document.getElementById('orderDir');
+				var orderDir = filter.options[filter.selectedIndex].value;
+
+				filter = document.getElementById('orderByGroup');
+				var orderByGroup = filter.options[filter.selectedIndex].value;
+
+				filter = document.getElementById('position');
+				var pos = filter.options[filter.selectedIndex].value;
+
+				var tbody = document.getElementById('tbody');
+				var new_tbody = document.createElement('tbody');
+				new_tbody.id = "tbody";
+				tbody.parentNode.replaceChild(new_tbody, tbody);
+
+				if (year === "") {
+					year = "IS NOT NULL"
+				} else {
+					year = '= '+year ;
+				}
+
+				if (name1 === "") {
+					name1 = "IS NOT NULL"
+				} else {
+					name1 = 'LIKE "%'+ name1+ '%"';
+				}
+
+				if (team === "") {
+					team = "IS NOT NULL"
+				} else {
+					team = 'LIKE "%'+ team+ '%"';
+				}
+
+				if (pos === "POS") {
+					pos = 'IS NOT NULL';
+				} else {
+					pos = '= "' + pos + '"';
+				}
+
+				res = alasql('SELECT * FROM fielding AS a JOIN people AS b ON a.playerID = b.playerID WHERE (name '+name1+' AND yearID '+year+' AND teamID '+team+' AND POS '+pos+') ORDER BY '+orderByGroup);
+
+				showResult(res);
+			}
+
+			function drawChart(number) {
+				var data = new google.visualization.DataTable();
+
+				var filter = document.getElementById('yVal');
+				var yVal = filter.options[filter.selectedIndex].value;
+
+				var name = document.getElementById('nameText').value;
+				if (name === '') {
+					name = 'Derek Jeter';
+				}
+
+				chartRes = alasql('SELECT yearID, '+yVal+', POS FROM people AS a JOIN fielding AS b ON a.playerID = b.playerID WHERE name = "'+name+'"');
+
+				data.addColumn('number', 'yearID');
+
+				var T, lbl;
+				
+				switch (yVal) {
+					case 'G':
+						T = 'Games Played';
+						break;
+					case 'GS':
+						T = 'Games Started';
+						break;
+					case 'PO':
+						T = 'Putouts';
+						break;
+					case 'A':
+						T = 'Assists';
+						break;
+					case 'DP':
+						T = 'Double Plays';
+						break;
+					case 'E':
+						T = 'Runs Scored';
+						break;
+					case 'PB':
+						T = 'Passed Balls';
+						break;
+					case 'CS':
+						T = 'Doubles';
+						break;
+				}
+				lbl = yVal;
+				data.addColumn('number', lbl);
+
+				var count = 0, c = 0;
+
+				for (var i = 0; i < Object.keys(chartRes).length; i++) {
+					
+					try {
+						count += chartRes[i][yVal];
+						c++;
+						data.addRow([chartRes[i].yearID, chartRes[i][yVal]]);
+					} catch (err) {
+						// do nothing
+					}
+				}
+
+				var avg = (count / c);
+
+
+				var options = {
+					title: name+' --- '+T+' vs Years --- Career AVG: '+avg,
+					width: 700,
+					height: 300,
+					hAxis: {
+						format:'####',
+						title: 'Years'
+					},
+					vAxis: {
+						title: lbl
+					}
+
+				};
+					var formatter1 = new google.visualization.NumberFormat({pattern:'####'});
+	    			formatter1.format(data, 0);
+					var chart = new google.visualization.LineChart(document.getElementById('chart-div'));
+					chart.draw(data, options);
+			}
+
+
+		</script>
+
+	</body>
+</html>

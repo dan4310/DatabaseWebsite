@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en-US" dir="ltr">
+	<head>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<link rel="stylesheet" href="css/style.css">
+		<link rel="shortcut icon" type="image/ico" href="favicon.ico"/>
+		<link rel="batting data" href="data/Batting.JSON"/>
+		<link rel="people data" href="data/People.JSON"/>
+		<title>Daniel's Database - Batting</title>
+	</head>
+
+
+	<body>
+		<section class="titleSec">
+				<a id="title"></a>
+				<h1 class="title">Daniel's Database Project</h1>
+				<p class="preamble">Here is a simple website to view an MLB database which I got from <a href="http://www.seanlahman.com/baseball-archive/statistics/">seanlahman.com</a>. You will be able to filter an search the database via backend SQL which I will be executing with <a href="https://github.com/agershun/alasql/wiki">AlaSQL</a>. I will also implement feature to project the future performance of players. These features will be coming soon.
+				</p>
+		
+		</section>
+
+		<!------------------ Navigation Bar ------------------------->
+
+		<section class="navbar">
+			<h2 class="navHeader">
+				<a class="navLink" href="index.html">People</a>
+			</h2>
+			<h2 class="navHeader">
+				<a class="navLinkCurrent" href="batting.html">Batting</a>
+			</h2>
+			<h2 class="navHeader">
+				<a class="navLink" href="fielding.html">Fielding</a>
+			</h2>
+			<h2 class="navHeader">
+				<a class="navLink" href="pitching.html">Pitching</a>
+			</h2>
+			
+		</section>
+
+		<!------------------ Chart Filter ------------------------->
+
+		<section class="query">
+			<div class='container'>
+				<div id='chart-filter'>
+					<form class="filter"> 
+						<label for="optgroup" class="filterLbl"> Search: </label>
+						<select class="input" name="optgroup" id="yVal">
+							<optgroup label="Order By">
+								<option value="A">Batting AVG</option>
+								<option value="OBP">On Base %</option>
+								<option value="SLG">Slugging %</option>
+								<option value="G">Games</option>
+								<option value="AB">At Bats</option>
+								<option value="R">Runs</option>
+								<option value="H">Hits</option>
+								<option value="DB">Doubles</option>
+								<option value="TR">Triples</option>
+								<option value="HR">Home Runs</option>
+								<option value="RBI">Runs Batted In</option>
+								<option value="BB">Bases on Balls</option>
+								<option value="SO">Strike Outs</option>
+								<option value="SB">Stolen Bases</option>
+							</optgroup>
+						</select>
+
+				
+						<label for="nameQuery" class="filterLbl"> Name: </label>
+						<input class="inputText" type="text" id="nameText" placeholder="Enter a name">
+					</form> 
+				</div>
+				<div id='chart-button'>
+					<button class="submitQuery" onclick="drawChart(0)"> Filter </button>
+				</div>
+			</div>
+		</section>
+
+		<!------------------ Chart ------------------------->
+		
+		<section class="tableSec">
+			<table class="tableRes">
+				<tr>
+					<td id="chart-div"></td>
+				</tr>
+			</table>
+		</section>
+
+		<!------------------ Filter ------------------------->
+
+		<section class="query">
+			<form class="filter"> 
+				<label for="optgroup" class="filterLbl"> Filter By: </label>
+				<select class="input" name="optgroup" id="orderByGroup">
+					<optgroup label="Order By">
+						<option value="A">Batting AVG</option>
+						<option value="OBP">On Base %</option>
+						<option value="SLG">Slugging %</option>
+						<option value="teamID">Team</option>
+						<option value="G">Games</option>
+						<option value="AB">At Bats</option>
+						<option value="R">Runs</option>
+						<option value="H">Hits</option>
+						<option value="DB">Doubles</option>
+						<option value="TR">Triples</option>
+						<option value="HR">Home Runs</option>
+						<option value="yearID">Year</option>
+					</optgroup>
+				</select>
+
+				<select class="input" name="optgroup" id="orderDir">
+					<optgroup label="Direction">
+						<option value="DESC">Desc</option>
+						<option value="ASC">Asc</option>
+					</optgroup>
+				</select>
+
+				<label for="name1Query" class="filterLbl"> Name: </label>
+				<input class="inputText" type="text" id="name1Text" placeholder="Enter a name">
+
+				<label for="yearQuery" class="filterLbl"> Year: </label>
+				<input class="inputText" type="text" id="yearText" placeholder="Enter a year">
+
+				<label for="teamQuery" class="filterLbl"> Team: </label>
+				<input class="inputText" type="text" id="teamText" placeholder="Enter a team">
+			</form> 
+			<button class="submitQuery" onclick="queryHandler(0)"> Filter </button>
+		</section>
+
+		<!------------------ Table ------------------------->
+		
+		<section class="tableSec">
+			<table class="tableRes">
+				<tbody id="tbody"></tbody>
+			</table>
+
+			<div class="numCells" id="numLoaded">
+
+			</div>
+
+			<a href="#title" class="toTop"> - Back to Top - </a>
+			<button class="submitQuery" onclick="loadMore()"> Load More </button>
+		</section>
+
+		<!------------------ Import AlaSQL ------------------------->
+
+		<script type="text/javascript" src="https://cdn.jsdelivr.net/alasql/0.1/alasql.min.js"></script>
+
+		<!------------------ Import JQuery ------------------------->
+
+		<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.6.2/jquery.min.js"> </script>
+
+		<!------------------ Import Google Charts ------------------------->
+
+		<script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+
+		<!------------------ Script ------------------------->
+		<script type="text/javascript">
+
+			var battingURL = "data/Batting.json";
+			var peopleURL = "data/People.json";
+			var battingJSON = (function () {
+			    var battingJSON = null;
+			    $.ajax({
+			        'async': false,
+			        'global': false,
+			        'url': battingURL,
+			        'dataType': "json",
+			        'success': function (data) {
+			            battingJSON = data;
+			        }
+			    });
+		    	return battingJSON;
+			})();
+
+			var peopleJSON = (function () {
+			    var peopleJSON = null;
+			    $.ajax({
+			        'async': false,
+			        'global': false,
+			        'url': peopleURL,
+			        'dataType': "json",
+			        'success': function (data) {
+			            peopleJSON = data;
+			        }
+			    });
+		    	return peopleJSON;
+			})();
+
+
+
+			/* ---------- Print Initial Table ------------------------------ */
+
+			alasql('CREATE TABLE batting (playerID string, teamID string, G number, AB number, R number, H number, DB number, TR number, HR number, RBI number, BB number, SO number, SB number, CS number, A number, OBP number, SLG number, yearID number)');
+			alasql('INSERT INTO batting SELECT playerID, teamID, G, AB, R, H, [2B] AS DB, [3B] AS TR, HR, RBI, BB, SO, SB, CS, H / AB AS A, (H+BB+HBP)/(AB+BB+HBP+SF) AS OBP, (H-HR-[2B]-[3B]+(2*[2B])+(3*[3B])+(4*HR)) / AB AS SLG, yearID FROM ? WHERE (AB > 0 AND H IS NOT NULL)', [battingJSON]);
+			alasql('CREATE TABLE people (playerID string, name string, birthYear number)');
+			alasql('INSERT INTO people SELECT playerID, nameFirst+" "+nameLast AS name, birthYear FROM ?', [peopleJSON]);
+
+			var res;
+			var chartRes;
+
+			google.load("visualization", "1", { packages: ["corechart"] });
+    		google.setOnLoadCallback(drawChart);
+			queryHandler(0);
+			var numCells = 100;
+
+			/* ---------- Functions ------------------------------ */
+
+			function showResult(obj) {
+				res = obj;
+				var tbody = document.getElementById('tbody');
+				var headings = ["Name", "Team", "G", "AB", "R", "H", "2B", "3B", "HR", "RBI", "BB", "SO", "SB", "CS", "AVG", "OBP", "SLG", "Player ID", "Year"];
+
+				h = "<tr>";
+	
+				for (var i = 0; i < headings.length; i++) {
+					h += "<th>" + headings[i] + "</th>";
+				}
+
+				h += "</tr>";
+
+				tbody.innerHTML += h;
+
+				var count = 0;
+				for (var i = 0; i < 100; i++) {
+				    var tr = "<tr>";
+
+				    try {
+					    tr += "<td>" + (i+1) + " - " + obj[i].name + "</td>" + "<td>" + obj[i].teamID + "</td>" + "<td>" + obj[i].G + "</td>" + "<td>" + obj[i].AB + "</td>" + "<td>" + obj[i].R + "</td>" + "<td>" + obj[i].H + "</td>" + "<td>" + obj[i].DB + "</td>" + "<td>" + obj[i].TR + "</td>" + "<td>" + obj[i].HR + "</td>"  + "<td>" + obj[i].RBI + "</td>" + "<td>" + obj[i].BB + "</td>" + "<td>" + obj[i].SO + "</td>" + "<td>" + obj[i].SB + "</td>" + "<td>" + obj[i].CS + "</td>" + "<td>" + obj[i].A.toFixed(3) + "</td>" + "<td>" + obj[i].OBP.toFixed(3) + "<td>" + obj[i].SLG.toFixed(3) + "</td>" + "<td>" + obj[i].playerID + "</td>" + "<td>" +  obj[i].yearID + "</td></xtr>";
+					    tbody.innerHTML += tr;
+					    count++;
+				    } catch (err) {
+				    	// do nothing
+				    }
+				}
+
+				numCells = count;
+
+				var numLoaded = document.getElementById('numLoaded');
+				numLoaded.innerHTML = "";
+				var s = "<p>"+(numCells)+" - "+Object.keys(obj).length+"</p>";
+				numLoaded.innerHTML += s;
+			}
+
+			function loadMore() {
+				if (numCells === Object.keys(res).length) {
+					return;
+				}
+
+				var tbody = document.getElementById('tbody');				
+
+				var count = 0;
+				for (var i = numCells; i < 100+numCells; i++) {
+				    var tr = "<tr>";
+
+				    if (i === Object.keys(res).length) {
+				    	break;
+				    }
+				    try {
+					    tr += "<td>" + (i+1) + " - " + res[i].name + "</td>" + "<td>" + res[i].teamID + "</td>" + "<td>" + res[i].G + "</td>" + "<td>" + res[i].AB + "</td>" + "<td>" + res[i].R + "</td>" + "<td>" + res[i].H + "</td>" + "<td>" + res[i].DB + "</td>" + "<td>" + res[i].TR + "</td>" + "<td>" + res[i].HR + "</td>"  + "<td>" + res[i].RBI + "</td>" + "<td>" + res[i].BB + "</td>" + "<td>" + res[i].SO + "</td>" + "<td>" + res[i].SB + "</td>" + "<td>" + res[i].CS + "</td>" + "<td>" + res[i].A.toFixed(3) + "</td>" + "<td>" + res[i].OBP.toFixed(3) + "<td>" + res[i].SLG.toFixed(3) + "</td>" + "<td>" + res[i].playerID + "</td>" +  "<td>" +  res[i].yearID + "</td></xtr>";
+					    tbody.innerHTML += tr;
+					    count++;
+					} catch (err) {
+						// do nothing
+					}
+				    
+				}
+
+				numCells += count;
+
+				var numLoaded = document.getElementById('numLoaded');
+				numLoaded.innerHTML = "<p></p>";
+				var s = "<p>"+(numCells)+" - "+Object.keys(res).length+"</p>";
+				numLoaded.innerHTML += s;
+
+			}
+
+			function queryHandler(number) {
+				var year = document.getElementById('yearText').value;
+				var name1 = document.getElementById('name1Text').value;
+				var team = document.getElementById('teamText').value;
+
+				var filter = document.getElementById('orderDir');
+				var orderDir = filter.options[filter.selectedIndex].value;
+
+				filter = document.getElementById('orderByGroup');
+				var orderByGroup = filter.options[filter.selectedIndex].value;
+
+
+				var tbody = document.getElementById('tbody');
+				var new_tbody = document.createElement('tbody');
+				new_tbody.id = "tbody";
+				tbody.parentNode.replaceChild(new_tbody, tbody);
+
+				var res;
+				if (year === "") {
+					year = "IS NOT NULL"
+				} else {
+					year = '= '+year ;
+				}
+
+				if (name1 === "") {
+					name1 = "IS NOT NULL"
+				} else {
+					name1 = 'LIKE "%'+ name1+ '%"';
+				}
+
+				if (team === "") {
+					team = "IS NOT NULL"
+				} else {
+					team = 'LIKE "%'+ team+ '%"';
+				}
+
+				res = alasql('SELECT * FROM batting AS a JOIN people AS b ON a.playerID = b.playerID WHERE (name '+name1+' AND yearID '+year+' AND teamID '+team+') ORDER BY '+orderByGroup+' '+orderDir);
+
+				showResult(res);
+			}
+
+			function drawChart(number) {
+				var data = new google.visualization.DataTable();
+
+				var filter = document.getElementById('yVal');
+				var yVal = filter.options[filter.selectedIndex].value;
+
+				var name = document.getElementById('nameText').value;
+				console.log(name);
+				if (name === '') {
+					name = 'Derek Jeter';
+				}
+
+				chartRes = alasql('SELECT yearID, '+yVal+' FROM people AS a JOIN batting AS b ON a.playerID = b.playerID WHERE name = "'+name+'"');
+
+				data.addColumn('number', 'yearID');
+
+				var T, lbl;
+				
+				switch (yVal) {
+					case 'A':
+						T = 'Batting Average';
+						lbl = 'AVG';
+						break;
+					case 'OBP':
+						T = 'On Base Percentage';
+						lbl = yVal;
+						break;
+					case 'SLG':
+						T = 'Slugging Percentage';
+						lbl = yVal;
+						break;
+					case 'G':
+						T = 'Games';
+						lbl = yVal;
+						break;
+					case 'AB':
+						T = 'At Bats';
+						lbl = yVal;
+						break;
+					case 'R':
+						T = 'Runs Scored';
+						lbl = yVal;
+						break;
+					case 'H':
+						T = 'Hits';
+
+					case 'DB':
+						T = 'Doubles';
+						lbl = '2B';
+						break;
+					case 'TR':
+						T = 'Triples';
+						lbl = '3B';
+						break;
+					case 'HR':
+						T = 'Home Runs';
+						lbl = 'HR';
+						break;
+					case 'RBI':
+						T = 'Runs Batted In';
+						lbl = 'RBI';
+						break;
+					case 'BB':
+						T = 'Bases on Balls';
+						lbl = 'BB';
+						break;
+					case 'SO':
+						T = 'Strike Outs';
+						lbl = 'SO';
+						break;
+					case 'SB':
+						T = 'Stolen Bases'
+						lbl = 'SB';
+						break;
+				}
+				data.addColumn('number', lbl);
+
+				var count = 0;
+
+				for (var i = 0; i < Object.keys(chartRes).length; i++) {
+					count += chartRes[i][yVal];
+					data.addRow([chartRes[i].yearID, chartRes[i][yVal]]);
+				}
+
+				var avg = (count / Object.keys(chartRes).length);
+
+				if (yVal === 'A' || yVal === 'OBP' || yVal === 'SLG') {
+					avg = avg.toFixed(3);
+				} else {
+					avg = avg.toFixed(0);
+				}
+
+				var options = {
+					title: name+' --- '+T+' vs Years --- Career AVG: '+avg,
+					width: 700,
+					height: 300,
+					hAxis: {
+						format:'####',
+						title: 'Years'
+					},
+					vAxis: {
+						title: lbl
+					}
+
+				};
+
+				var formatter1 = new google.visualization.NumberFormat({pattern:'####'});
+    			formatter1.format(data, 0);
+				var chart = new google.visualization.LineChart(document.getElementById('chart-div'));
+				chart.draw(data, options);
+			}
+
+
+		</script>
+
+	</body>
+</html>
