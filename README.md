@@ -1,2 +1,2 @@
 # DatabaseWebsite
-This is a website I created to interacted analysis with an MLB database.
+This is a website I created to interacted analysis with a MLB database.
